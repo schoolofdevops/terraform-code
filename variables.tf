@@ -30,3 +30,11 @@ variable "ssh_user" {
 variable "ssh_pvtkey" {
   default = "~/.ssh/id_rsa"
 }
+
+variable "rds_name" {
+  default = "devopsdemo-db"
+}
+
+variable "rds_pass" {
+  default = "1nitCron"
+}

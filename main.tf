@@ -71,3 +71,41 @@ resource "aws_key_pair" "webserver_key" {
 output "webserver_ip" {
   value = "${aws_instance.webserver.public_ip}"
 }
+
+data "aws_db_instance" "database" {
+  db_instance_identifier = "${var.rds_name}"
+}
+
+output "rds_endpoint" {
+  value = "${data.aws_db_instance.database.address}"
+}
+
+output "rds_user" {
+  value = "${data.aws_db_instance.database.master_username}"
+}
+
+output "rds_db" {
+  value = "${data.aws_db_instance.database.db_name}"
+}
+
+resource "null_resource" "populate_db_01" {
+  provisioner "local-exec" {
+    command = "ssh ubuntu@${aws_instance.webserver.public_ip} 'sudo sed -i -e 's/DBHOST/${data.aws_db_instance.database.address}/g' /var/www/html/config.ini'"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh ubuntu@${aws_instance.webserver.public_ip} 'sudo sed -i -e 's/SQLUSER/${data.aws_db_instance.database.master_username}/g' /var/www/html/config.ini'"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh ubuntu@${aws_instance.webserver.public_ip} 'sudo sed -i -e 's/SQLPASSWORD/${var.rds_pass}/g' /var/www/html/config.ini'"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh ubuntu@${aws_instance.webserver.public_ip} 'sudo sed -i -e 's/SQLDBNAME/${data.aws_db_instance.database.db_name}/g' /var/www/html/config.ini'"
+  }
+
+  provisioner "local-exec" {
+    command = "ssh ubuntu@${aws_instance.webserver.public_ip} 'sudo service apache2 restart'"
+  }
+}
